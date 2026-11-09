@@ -49,7 +49,6 @@ app/models/finetuned/
 
 # Fine-tuning outputs (model checkpoints, logs)
 fine-tune/FineTuning/
-fine-tune/dataset/
 
 # Logs
 *.log
