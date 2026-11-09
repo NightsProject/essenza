@@ -51,16 +51,16 @@ async def summarize(request: Request, payload: SummarizeRequest):
     model_registry = get_model_registry(request)
 
     # Validate model availability
-    if not model_registry.is_ready("finetuned"):
-        model_info = model_registry.get_model_info("finetuned")
-        error_detail = model_info.get("error", "Fine-tuned model is not loaded")
+    if not model_registry.is_ready(payload.model_id):
+        model_info = model_registry.get_model_info(payload.model_id)
+        error_detail = model_info.get("error", f"Model {payload.model_id} is not loaded")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=ErrorResponse(
                 error=ErrorDetail(
                     code="MODEL_UNAVAILABLE",
-                    message="Fine-tuned model is not loaded",
-                    details={"model_id": "finetuned", "error": error_detail, "path": str(settings.finetuned_model_path)},
+                    message=f"Model {payload.model_id} is not loaded",
+                    details={"model_id": payload.model_id, "error": error_detail, "path": model_info.get("path", "")},
                 ),
                 request_id=request_id,
             ).model_dump(),
@@ -76,9 +76,11 @@ async def summarize(request: Request, payload: SummarizeRequest):
         result = await summarizer.summarize(
             source_text=payload.source_text,
             max_compression_percent=payload.max_compression_percent,
-            model_id="finetuned",
+            model_id=payload.model_id,
         )
         generation_time_ms = int((time.perf_counter() - start_time) * 1000)
+
+        model_info = model_registry.get_model_info(payload.model_id)
 
         source_word_count = metrics.count_words(payload.source_text)
         summary_word_count = metrics.count_words(result.summary)
@@ -86,6 +88,8 @@ async def summarize(request: Request, payload: SummarizeRequest):
         within_limit = metrics.within_cap(actual_compression, payload.max_compression_percent)
 
         return SummarizeResult(
+            model_id=payload.model_id,
+            model_label=model_info["label"],
             summary=result.summary,
             summary_word_count=summary_word_count,
             actual_compression_percent=actual_compression,
@@ -127,7 +131,7 @@ async def summarize(request: Request, payload: SummarizeRequest):
     response_model=CompareResponse,
     responses={
         422: {"model": ErrorResponse, "description": "Validation error"},
-        503: {"model": ErrorResponse, "description": "One or both models unavailable"},
+        503: {"model": ErrorResponse, "description": "No models available"},
         504: {"model": ErrorResponse, "description": "Generation timeout"},
     },
     name="compare",
@@ -139,23 +143,28 @@ async def compare(request: Request, payload: CompareRequest):
     settings = get_settings(request)
     model_registry = get_model_registry(request)
 
-    # Check model availability
-    baseline_ready = model_registry.is_ready("baseline")
-    finetuned_ready = model_registry.is_ready("finetuned")
+    # Determine which models to compare
+    if payload.model_ids:
+        # Use explicitly requested models
+        model_ids_to_compare = payload.model_ids
+    else:
+        # Default: baseline + all finetuned models
+        model_ids_to_compare = ["baseline"] + [
+            mid for mid, info in model_registry.models.items()
+            if info.model_type == "finetuned"
+        ]
 
-    if not baseline_ready and not finetuned_ready:
-        baseline_info = model_registry.get_model_info("baseline")
-        finetuned_info = model_registry.get_model_info("finetuned")
+    # Check if any models are available
+    available_models = [mid for mid in model_ids_to_compare if model_registry.is_ready(mid)]
+    if not available_models:
+        all_models_info = model_registry.get_all_models()
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=ErrorResponse(
                 error=ErrorDetail(
                     code="MODEL_UNAVAILABLE",
-                    message="Neither model is loaded",
-                    details={
-                        "baseline": {"error": baseline_info.get("error", "Not loaded"), "path": str(settings.baseline_model_path)},
-                        "finetuned": {"error": finetuned_info.get("error", "Not loaded"), "path": str(settings.finetuned_model_path)},
-                    },
+                    message="No models are loaded",
+                    details={"models": all_models_info},
                 ),
                 request_id=request_id,
             ).model_dump(),
@@ -167,12 +176,12 @@ async def compare(request: Request, payload: CompareRequest):
     source_word_count = metrics.count_words(payload.source_text)
     results = []
 
-    for model_id in ("baseline", "finetuned"):
-        model_label = "Baseline FLAN-T5-small" if model_id == "baseline" else "Fine-tuned FLAN-T5-small"
-        model_ready = baseline_ready if model_id == "baseline" else finetuned_ready
+    for model_id in model_ids_to_compare:
+        model_ready = model_registry.is_ready(model_id)
+        model_info = model_registry.get_model_info(model_id)
+        model_label = model_info["label"]
 
         if not model_ready:
-            model_info = model_registry.get_model_info(model_id)
             error_detail = model_info.get("error", "Model not available")
             results.append(
                 CompareResult(
@@ -270,32 +279,32 @@ async def health(request: Request):
     models_status = []
     loaded_count = 0
 
-    for model_id in ("baseline", "finetuned"):
-        ready = model_registry.is_ready(model_id)
+    for model_info in model_registry.get_all_models():
+        ready = model_info["loaded"]
         if ready:
             loaded_count += 1
-        model_info = model_registry.get_model_info(model_id)
         models_status.append(
             ModelStatus(
-                model_id=model_id,
+                model_id=model_info["model_id"],
                 model_label=model_info["label"],
+                model_type=model_info.get("model_type", "unknown"),
                 loaded=ready,
                 device=model_info.get("device", "unknown"),
                 error=model_info.get("error"),
             )
         )
 
-    if loaded_count == 2:
-        status = "healthy"
-    elif loaded_count == 1:
-        status = "degraded"
+    if loaded_count == len(models_status) and loaded_count > 0:
+        status_val = "healthy"
+    elif loaded_count > 0:
+        status_val = "degraded"
     else:
-        status = "unhealthy"
+        status_val = "unhealthy"
 
     uptime = time.time() - getattr(request.app.state, "start_time", time.time())
 
     return HealthResponse(
-        status=status,
+        status=status_val,
         version=settings.version,
         models=models_status,
         device=model_registry.device,

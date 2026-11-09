@@ -22,7 +22,7 @@ class SummarizeRequest(BaseModel):
         description="Maximum summary length as percentage of source word count",
         examples=[20],
     )
-    model_id: Literal["finetuned"] = Field(
+    model_id: str = Field(
         default="finetuned",
         description="Model to use (single-model mode only)",
     )
@@ -42,6 +42,10 @@ class CompareRequest(BaseModel):
         description="Maximum summary length as percentage of source word count",
         examples=[20],
     )
+    model_ids: list[str] | None = Field(
+        default=None,
+        description="Specific models to compare (default: all loaded models)",
+    )
 
 
 # =============================================================================
@@ -49,7 +53,7 @@ class CompareRequest(BaseModel):
 # =============================================================================
 
 class BaseResult(BaseModel):
-    model_id: Literal["baseline", "finetuned"]
+    model_id: str
     model_label: str
     summary: str
     summary_word_count: int
@@ -60,8 +64,8 @@ class BaseResult(BaseModel):
 
 
 class SummarizeResult(BaseModel):
-    model_id: Literal["finetuned"] = "finetuned"
-    model_label: str = "Fine-tuned FLAN-T5-small"
+    model_id: str
+    model_label: str
     summary: str
     summary_word_count: int
     actual_compression_percent: float
@@ -77,13 +81,14 @@ class CompareResult(BaseResult):
 class CompareResponse(BaseModel):
     max_compression_percent: int
     source_word_count: int
-    results: list[CompareResult] = Field(..., min_length=2, max_length=2)
+    results: list[CompareResult] = Field(..., min_length=1)
     request_id: str
 
 
 class ModelStatus(BaseModel):
-    model_id: Literal["baseline", "finetuned"]
+    model_id: str
     model_label: str
+    model_type: str
     loaded: bool
     device: str
     error: str | None = None

@@ -50,13 +50,20 @@
         <label class="section-label">MODEL MODE</label>
         <div class="model-mode-selector" role="radiogroup" aria-label="Model inference mode">
             <label class="mode-btn">
-                <input type="radio" name="model_mode" value="finetuned" checked>
-                <span>Fine-tuned model</span>
+                <input type="radio" name="model_mode" value="single" checked>
+                <span>Single model</span>
             </label>
             <label class="mode-btn">
                 <input type="radio" name="model_mode" value="compare">
-                <span>Compare baseline and fine-tuned</span>
+                <span>Compare all models</span>
             </label>
+        </div>
+        <!-- Single model selection (shown when mode=single) -->
+        <div id="single-model-selector" class="model-selector" hidden>
+            <label class="section-label" for="single-model-select">Select model</label>
+            <select id="single-model-select" name="model_id" aria-label="Select model for single-model mode">
+                <option value="finetuned" disabled>Loading models…</option>
+            </select>
         </div>
     </section>
 

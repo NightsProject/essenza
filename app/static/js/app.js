@@ -9,6 +9,7 @@
     const CONFIG = window.ESS_ENZA_CONFIG || {
         apiSummarize: '/api/summarize',
         apiCompare: '/api/compare',
+        apiHealth: '/health',
     };
 
     // ========================================================================
@@ -16,6 +17,7 @@
     // ========================================================================
     let isGenerating = false;
     let currentRequestId = null;
+    let availableModels = [];
 
     // ========================================================================
     // DOM Elements
@@ -34,6 +36,10 @@
     // Radio groups
     const thresholdRadios = document.querySelectorAll('input[name="max_compression_percent"]');
     const modelModeRadios = document.querySelectorAll('input[name="model_mode"]');
+
+    // Single model selector
+    const singleModelSelector = document.getElementById('single-model-selector');
+    const singleModelSelect = document.getElementById('single-model-select');
 
     // ========================================================================
     // Utilities
@@ -69,6 +75,7 @@
         thresholdRadios.forEach(r => r.disabled = generating);
         modelModeRadios.forEach(r => r.disabled = generating);
         clearBtn.disabled = generating;
+        singleModelSelect.disabled = generating;
 
         if (generating) {
             btnText.hidden = true;
@@ -83,6 +90,59 @@
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML; // Safe: textContent escapes HTML entities
+    }
+
+    // ========================================================================
+    // Model Loading
+    // ========================================================================
+    async function loadAvailableModels() {
+        try {
+            const response = await fetch(CONFIG.apiHealth);
+            const data = await response.json();
+            
+            // Filter to only loaded models
+            availableModels = data.models.filter(m => m.loaded);
+            
+            populateModelSelector();
+        } catch (error) {
+            console.error('Failed to load models:', error);
+            singleModelSelect.innerHTML = '<option value="">Failed to load models</option>';
+        }
+    }
+
+    function populateModelSelector() {
+        singleModelSelect.innerHTML = '';
+        
+        if (availableModels.length === 0) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = 'No models loaded';
+            opt.disabled = true;
+            singleModelSelect.appendChild(opt);
+            return;
+        }
+
+        availableModels.forEach(model => {
+            const opt = document.createElement('option');
+            opt.value = model.model_id;
+            opt.textContent = `${model.model_label} (${model.model_type})`;
+            singleModelSelect.appendChild(opt);
+        });
+
+        // Prefer finetuned as default if available
+        const finetunedModel = availableModels.find(m => m.model_type === 'finetuned');
+        if (finetunedModel) {
+            singleModelSelect.value = finetunedModel.model_id;
+        }
+    }
+
+    function toggleModelSelector() {
+        const modelMode = document.querySelector('input[name="model_mode"]:checked').value;
+        if (modelMode === 'single') {
+            singleModelSelector.hidden = false;
+        } else {
+            singleModelSelector.hidden = true;
+        }
     }
 
     // ========================================================================
@@ -127,8 +187,12 @@
         currentRequestId = crypto.randomUUID().slice(0, 8);
 
         try {
-            if (modelMode === 'finetuned') {
-                await callSummarize(text, threshold);
+            if (modelMode === 'single') {
+                const modelId = singleModelSelect.value;
+                if (!modelId) {
+                    throw new Error('No model selected');
+                }
+                await callSummarize(text, threshold, modelId);
             } else {
                 await callCompare(text, threshold);
             }
@@ -140,13 +204,14 @@
         }
     }
 
-    async function callSummarize(text, threshold) {
+    async function callSummarize(text, threshold, modelId) {
         const response = await fetch(CONFIG.apiSummarize, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 source_text: text,
                 max_compression_percent: threshold,
+                model_id: modelId,
             }),
         });
 
@@ -296,8 +361,14 @@
     clearBtn.addEventListener('click', handleClear);
     sourceText.addEventListener('input', updateWordCount);
 
+    modelModeRadios.forEach(radio => {
+        radio.addEventListener('change', toggleModelSelector);
+    });
+
     // Initialize
     updateWordCount();
+    loadAvailableModels();
+    toggleModelSelector();
     sourceText.focus();
 
     // Announce generation status for screen readers

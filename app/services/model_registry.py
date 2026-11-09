@@ -15,9 +15,10 @@ logger = logging.getLogger("essenza.model_registry")
 class ModelInfo:
     def __init__(
         self,
-        model_id: Literal["baseline", "finetuned"],
+        model_id: str,
         label: str,
         path: Path,
+        model_type: Literal["baseline", "finetuned"],
         tokenizer=None,
         model=None,
         device: str = "unknown",
@@ -26,6 +27,7 @@ class ModelInfo:
         self.model_id = model_id
         self.label = label
         self.path = path
+        self.model_type = model_type
         self.tokenizer = tokenizer
         self.model = model
         self.device = device
@@ -53,8 +55,10 @@ class ModelRegistry:
     Loads and manages model checkpoints at startup.
 
     Supports two strategies:
-    - "both": Load both models at startup (default)
+    - "both": Load all models at startup (default)
     - "serialized": Load models on first use (for memory-constrained environments)
+
+    Finetuned models are auto-discovered from subdirectories under the finetuned model path.
     """
 
     def __init__(self, settings: Settings):
@@ -63,17 +67,50 @@ class ModelRegistry:
         self.models: dict[str, ModelInfo] = {}
         self._initialized = False
 
-        # Register known models
+        # Register baseline model (single)
         self.models["baseline"] = ModelInfo(
             model_id="baseline",
             label="Baseline FLAN-T5-small",
             path=settings.baseline_model_path,
+            model_type="baseline",
         )
-        self.models["finetuned"] = ModelInfo(
-            model_id="finetuned",
-            label="Fine-tuned FLAN-T5-small",
-            path=settings.finetuned_model_path,
-        )
+
+        # Discover and register finetuned models from subdirectories
+        self._discover_finetuned_models()
+
+    def _discover_finetuned_models(self):
+        """Scan finetuned_model_path for subdirectories containing model checkpoints."""
+        finetuned_root = self.settings.finetuned_model_path
+
+        if not finetuned_root.exists():
+            logger.warning("Finetuned model root does not exist: %s", finetuned_root)
+            return
+
+        # Look for subdirectories that contain a config.json (indicating a model checkpoint)
+        for subdir in sorted(finetuned_root.iterdir()):
+            if subdir.is_dir() and (subdir / "config.json").exists():
+                model_id = f"finetuned:{subdir.name}"
+                label = f"Fine-tuned: {subdir.name}"
+                self.models[model_id] = ModelInfo(
+                    model_id=model_id,
+                    label=label,
+                    path=subdir,
+                    model_type="finetuned",
+                )
+                logger.info("Discovered finetuned model: %s at %s", model_id, subdir)
+
+        # Fallback: if no subdirectories found but root has config.json, register root as single finetuned
+        if not any(m.model_type == "finetuned" for m in self.models.values()):
+            if (finetuned_root / "config.json").exists():
+                self.models["finetuned"] = ModelInfo(
+                    model_id="finetuned",
+                    label="Fine-tuned FLAN-T5-small",
+                    path=finetuned_root,
+                    model_type="finetuned",
+                )
+                logger.info("Registered single finetuned model at root: %s", finetuned_root)
+            else:
+                logger.warning("No finetuned models found at %s", finetuned_root)
 
     def _resolve_device(self, device_setting: str) -> str:
         if device_setting == "auto":
@@ -92,20 +129,22 @@ class ModelRegistry:
         strategy = self.settings.model_load_strategy
 
         if strategy == "both":
-            await self._load_model("baseline")
-            await self._load_model("finetuned")
+            for model_id in self.models:
+                await self._load_model(model_id)
         elif strategy == "serialized":
             # Models loaded on demand in get_model()
             pass
         else:
             logger.warning("Unknown model_load_strategy: %s, defaulting to 'both'", strategy)
-            await self._load_model("baseline")
-            await self._load_model("finetuned")
+            for model_id in self.models:
+                await self._load_model(model_id)
 
         self._initialized = True
-        logger.info("Model registry initialized (device=%s, strategy=%s)", self.device, strategy)
+        loaded_count = sum(1 for m in self.models.values() if m.loaded)
+        logger.info("Model registry initialized (device=%s, strategy=%s, models=%d, loaded=%d)",
+                    self.device, strategy, len(self.models), loaded_count)
 
-    async def _load_model(self, model_id: Literal["baseline", "finetuned"]):
+    async def _load_model(self, model_id: str):
         """Load a single model and tokenizer."""
         info = self.models[model_id]
 
@@ -151,8 +190,11 @@ class ModelRegistry:
             logger.exception(error)
             info.mark_error(error)
 
-    def get_model(self, model_id: Literal["baseline", "finetuned"]) -> ModelInfo:
+    def get_model(self, model_id: str) -> ModelInfo:
         """Get model info, loading on demand if strategy is serialized."""
+        if model_id not in self.models:
+            raise KeyError(f"Unknown model_id: {model_id}. Available: {list(self.models.keys())}")
+
         info = self.models[model_id]
 
         if not info.loaded and self.settings.model_load_strategy == "serialized":
@@ -161,20 +203,39 @@ class ModelRegistry:
 
         return info
 
-    def is_ready(self, model_id: Literal["baseline", "finetuned"]) -> bool:
+    def is_ready(self, model_id: str) -> bool:
         """Check if model is loaded and ready."""
+        if model_id not in self.models:
+            return False
         return self.models[model_id].loaded
 
-    def get_model_info(self, model_id: Literal["baseline", "finetuned"]) -> dict:
+    def get_model_info(self, model_id: str) -> dict:
         """Get model metadata for health endpoint."""
+        if model_id not in self.models:
+            return {"label": model_id, "loaded": False, "device": "unknown", "error": "Unknown model", "path": ""}
+
         info = self.models[model_id]
         return {
+            "model_id": info.model_id,
             "label": info.label,
+            "model_type": info.model_type,
             "loaded": info.loaded,
             "device": info.device,
             "error": info.error,
             "path": str(info.path),
         }
+
+    def get_all_models(self) -> list[dict]:
+        """Get info for all registered models."""
+        return [self.get_model_info(mid) for mid in self.models]
+
+    def get_finetuned_models(self) -> list[dict]:
+        """Get info for all finetuned models only."""
+        return [self.get_model_info(mid) for mid, info in self.models.items() if info.model_type == "finetuned"]
+
+    def get_baseline_model(self) -> dict:
+        """Get info for baseline model."""
+        return self.get_model_info("baseline")
 
     async def shutdown(self):
         """Clean up model references."""

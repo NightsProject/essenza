@@ -72,7 +72,7 @@ class Summarizer:
         self,
         source_text: str,
         max_compression_percent: int,
-        model_id: Literal["baseline", "finetuned"],
+        model_id: str,
     ) -> SummarizationResult:
         """Generate summary for given source text and model."""
 
