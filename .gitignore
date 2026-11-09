@@ -47,8 +47,9 @@ htmlcov/
 app/models/baseline/
 app/models/finetuned/
 
-# Fine-tuning notebooks and outputs
-fine-tune/
+# Fine-tuning outputs (model checkpoints, logs)
+fine-tune/FineTuning/
+fine-tune/dataset/
 
 # Logs
 *.log
