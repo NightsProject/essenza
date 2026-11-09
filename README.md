@@ -231,7 +231,7 @@ Implementation follows 6 phases from `docs/design/decision-roadmap.md`:
 | Phase | Status | Description |
 |-------|--------|-------------|
 | **Phase 1** | ✅ Complete | Project setup — FastAPI skeleton, config, templates, static, health route |
-| **Phase 2** | 🟡 Code complete, needs checkpoints | Model integration — registry, summarizer, metrics, token validation, deterministic gen, device selection |
+| **Phase 2** | ✅ Complete | Model integration — registry, summarizer, metrics, token validation, deterministic gen, device selection (both models loaded on CUDA) |
 | **Phase 3** | ✅ Complete | Core UI — source editor, threshold selector, model mode, result cards, copy, responsive, accessible |
 | **Phase 4** | ✅ Complete | Comparison — dual endpoint, paired results, partial failure handling, aligned metrics |
 | **Phase 5** | ✅ Complete | Methodology & polish — methodology/about pages, design system, accessibility audit, copy confirmation |
