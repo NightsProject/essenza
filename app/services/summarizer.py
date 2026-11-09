@@ -29,12 +29,30 @@ class Summarizer:
         self.model_registry = model_registry
         self.settings = settings
 
-    def _build_prompt(self, source_text: str, max_compression_percent: int) -> str:
-        """Build prompt matching notebook format: 'summarize to at most N%: [source]'"""
-        return self.settings.prompt_template.format(
-            percent=max_compression_percent,
-            text=source_text.strip(),
-        )
+    def _build_prompt(self, source: str, target_length: int) -> str:
+        target_length = int(target_length)
+
+        compression_instructions = {
+            10: (
+                "Create a very short summary, targeting approximately "
+                "10% of the original source word count. Include only "
+                "the central message and essential facts."
+            ),
+            20: (
+                "Create a short summary, targeting approximately "
+                "20% of the original source word count. Include the "
+                "main ideas and important supporting information."
+            ),
+            30: (
+                "Create a moderately detailed summary, targeting "
+                "approximately 30% of the original source word count. "
+                "Include the main ideas, important supporting details, "
+                "and relevant context."
+            )
+        }
+
+        instruction = compression_instructions.get(target_length, compression_instructions[20])
+        return f"{instruction}\n\nSource text:\n{source.strip()}"
 
     def _validate_token_length(self, tokenizer: PreTrainedTokenizerBase, prompt: str) -> int:
         """Validate input doesn't exceed token limit. Returns token count."""
