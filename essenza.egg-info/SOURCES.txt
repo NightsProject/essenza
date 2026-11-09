@@ -1,6 +1,0 @@
-pyproject.toml
-essenza.egg-info/PKG-INFO
-essenza.egg-info/SOURCES.txt
-essenza.egg-info/dependency_links.txt
-essenza.egg-info/requires.txt
-essenza.egg-info/top_level.txt
