@@ -1,4 +1,4 @@
-# WORKFLOW.md — {{PROJECT_NAME}} Agent Onboarding & Execution Guide
+# WORKFLOW.md — essenza Agent Onboarding & Execution Guide
 
 This guide is the project's working agreement for agents and contributors. Adapt the framework-specific sections during project setup; do not treat example paths, commands, or decisions as facts until verified in this repository.
 
