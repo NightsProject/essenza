@@ -228,12 +228,16 @@ uv run mypy app
 
 Implementation follows 6 phases from `docs/design/decision-roadmap.md`:
 
-1. **Phase 1** — Project setup (✅ complete)
-2. **Phase 2** — Model integration
-3. **Phase 3** — Core UI
-4. **Phase 4** — Comparison mode
-5. **Phase 5** — Methodology & polish
-6. **Phase 6** — Validation & deployment
+| Phase | Status | Description |
+|-------|--------|-------------|
+| **Phase 1** | ✅ Complete | Project setup — FastAPI skeleton, config, templates, static, health route |
+| **Phase 2** | 🟡 Code complete, needs checkpoints | Model integration — registry, summarizer, metrics, token validation, deterministic gen, device selection |
+| **Phase 3** | ✅ Complete | Core UI — source editor, threshold selector, model mode, result cards, copy, responsive, accessible |
+| **Phase 4** | ✅ Complete | Comparison — dual endpoint, paired results, partial failure handling, aligned metrics |
+| **Phase 5** | ✅ Complete | Methodology & polish — methodology/about pages, design system, accessibility audit, copy confirmation |
+| **Phase 6** | ⬜ Not started | Validation & deployment — tests, benchmarks, production config, HTTPS proxy |
+
+**Blocker for Phase 2**: Export model checkpoints from Colab to `app/models/baseline/` and `app/models/finetuned/`.
 
 Each phase has explicit exit criteria in `plans/`.
 

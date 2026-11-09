@@ -82,7 +82,16 @@ Implement the project in 6 sequential phases as defined in the design document, 
 - **Skipping Phase 5**: Rejected — methodology page is core to research transparency
 
 ## Status
-**Accepted** — Implementation begins with Phase 1.
+**Accepted** — Implementation progress:
+
+| Phase | Status | Notes |
+|-------|--------|-------|
+| Phase 1: Project Setup | ✅ Complete | All exit criteria verified |
+| Phase 2: Model Integration | 🟡 Code complete, needs checkpoints | ModelRegistry, Summarizer, Metrics, token validation, deterministic gen, device selection implemented; blocked on Colab checkpoint export |
+| Phase 3: Core UI | ✅ Complete | Source editor, threshold selector, model mode, result cards, copy, responsive, accessible |
+| Phase 4: Comparison | ✅ Complete | Dual endpoint, paired results, partial failure handling, aligned metrics |
+| Phase 5: Methodology & Polish | ✅ Complete | Methodology/about pages, design system, accessibility audit, copy confirmation |
+| Phase 6: Validation & Deployment | ⬜ Not started | Tests, benchmarks, production config, HTTPS proxy |
 
 ## Implementation Notes
 - Phase plans created in `plans/phase-N-<name>.md`
