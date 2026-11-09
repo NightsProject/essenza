@@ -79,7 +79,7 @@ class Summarizer:
             prompt,
             return_tensors="pt",
             truncation=False,  # We validated above
-            padding=False,
+            padding=True,
         ).to(device)
 
         # Generate
@@ -95,10 +95,13 @@ class Summarizer:
                 eos_token_id=tokenizer.eos_token_id,
             )
 
-        # Decode only the generated tokens (skip input)
-        input_length = inputs["input_ids"].shape[1]
-        generated_tokens = outputs[0][input_length:]
-        summary = tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
+        # Decode generated sequence
+        generated_tokens = outputs[0]
+
+        summary = tokenizer.decode(
+            generated_tokens,
+            skip_special_tokens=True
+        ).strip()
 
         token_count = len(generated_tokens)
 
@@ -109,4 +112,7 @@ class Summarizer:
             len(summary),
         )
 
-        return SummarizationResult(summary=summary, token_count=token_count)
+        return SummarizationResult(
+            summary=summary,
+            token_count=token_count
+        )
