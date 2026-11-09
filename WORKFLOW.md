@@ -111,21 +111,20 @@ Afterward, search the documentation set for stale paths, commands, filenames, or
 
 ---
 
-## 6. Project-Specific Commands (Fill In After Verification)
-
-Keep this section truthful for the project. Replace placeholders only after inspecting the repository and running the commands successfully. Delete rows that do not apply.
+## 6. Project-Specific Commands (Verified After Setup)
 
 | Purpose | Verified command | Notes |
 |---------|------------------|-------|
-| Install/setup | `<command>` | `<manifest or setup guide>` |
-| Tests | `<command>` | `<test framework / scope>` |
-| Lint/type check | `<command>` | `<tool, if configured>` |
-| Build/import/parse | `<command>` | `<tool, if applicable>` |
-| Run locally | `<command>` | `<entry point>` |
+| Install dependencies | `pip install -r requirements.txt` | Python 3.10+; PyTorch with CUDA if available |
+| Run tests | `pytest app/tests -v` | Unit + service + API tests |
+| Lint/type check | `ruff check app && mypy app` | If configured |
+| Run locally (dev) | `uvicorn app.main:app --reload --port 8000` | FastAPI dev server |
+| Run locally (prod) | `uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1` | Single worker for model memory |
+| Health check | `curl http://localhost:8000/health` | Returns model readiness |
 
 ### Framework adaptation notes
 
-This template is framework-neutral, but the project scaffolding script may not be. The current `new_project.sh` scaffold creates Python/Hermes-plugin directories and assumptions. For a different framework, do not treat those paths, dependencies, layer rules, test commands, or example decisions as applicable: adapt the scaffold and generated onboarding documents to the target framework, then verify every command and reference.
+This project uses **FastAPI + Jinja2 + Hugging Face Transformers**. The original template scaffold created a Hermes plugin structure; that structure has been replaced with the `app/` layout defined in the design document (section 8.1). Do not treat the old `src/plugin`, `src/services`, etc. paths as applicable.
 
 ---
 
@@ -144,10 +143,10 @@ Before ending a work session:
 
 ## 8. Quick Reference
 
-- **What is the project?** Read `AGENTS.md` and the product-boundary decision if present.
+- **What is the project?** Read `AGENTS.md` and the design document (`docs/design/Extreme_Text_Summarization_Web_Application_Design_Document.docx`)
 - **What is decided?** Read `docs/design/README.md` and the applicable decision files.
-- **What should happen next?** Read the roadmap and active plan if present.
-- **What can I run?** Use only commands verified in project config, CI, or contributor docs.
+- **What should happen next?** Read the roadmap and active plan if present (6 phases in design doc).
+- **What can I run?** Use only commands verified in project config or this workflow.
 - **What if implementation conflicts with a decision?** Stop the conflicting work, surface the discrepancy, and resolve the decision before proceeding.
 - **What if a referenced file is missing?** Confirm via filesystem/index; correct stale references rather than inventing the file.
 

@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-content">
+    <h1>About</h1>
+
+    <section class="about-section">
+        <h2>Project</h2>
+        <p><strong>Essenza</strong> — Extreme Text Summarization Web Application</p>
+        <p>Fine-tuning small Transformer models for information-preserving extreme text summarization.</p>
+    </section>
+
+    <section class="about-section">
+        <h2>Model Information</h2>
+        <table class="info-table">
+            <tbody>
+                <tr>
+                    <th>Base Model</th>
+                    <td><code>google/flan-t5-small</code></td>
+                </tr>
+                <tr>
+                    <th>Baseline Checkpoint</th>
+                    <td id="baseline-checkpoint">Not loaded</td>
+                </tr>
+                <tr>
+                    <th>Fine-tuned Checkpoint</th>
+                    <td id="finetuned-checkpoint">Not loaded</td>
+                </tr>
+                <tr>
+                    <th>Tokenizer</th>
+                    <td><code>google/flan-t5-small</code></td>
+                </tr>
+                <tr>
+                    <th>Inference Device</th>
+                    <td id="device-info">Unknown</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="about-section">
+        <h2>Application</h2>
+        <table class="info-table">
+            <tbody>
+                <tr>
+                    <th>Version</th>
+                    <td id="app-version">0.1.0</td>
+                </tr>
+                <tr>
+                    <th>Framework</th>
+                    <td>FastAPI + Jinja2</td>
+                </tr>
+                <tr>
+                    <th>Model Runtime</th>
+                    <td>Hugging Face Transformers + PyTorch</td>
+                </tr>
+                <tr>
+                    <th>Deployment</th>
+                    <td>Uvicorn (single worker) behind reverse proxy</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="about-section">
+        <h2>Research Context</h2>
+        <p>This application is the demonstration interface for the research project:</p>
+        <blockquote>
+            "Fine-Tuning Small Transformer Models for Information-Preserving Extreme Text Summarization"
+        </blockquote>
+        <p>The Colab notebook handles dataset validation, fine-tuning, and formal evaluation. This web application loads exported model artifacts and provides interactive inference and comparison.</p>
+    </section>
+
+    <section class="about-section">
+        <h2>Links</h2>
+        <ul>
+            <li><a href="{{ url_for('index') }}">← Back to Summarizer</a></li>
+            <li><a href="{{ url_for('methodology') }}">Methodology</a></li>
+            <li><a href="/health" target="_blank">Health Endpoint</a></li>
+            <li><a href="/docs" target="_blank">API Documentation (if enabled)</a></li>
+        </ul>
+    </section>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Fetch model info from health endpoint
+    async function loadModelInfo() {
+        try {
+            const response = await fetch('/health');
+            const data = await response.json();
+
+            document.getElementById('app-version').textContent = data.version;
+            document.getElementById('device-info').textContent = data.device;
+
+            data.models.forEach(model => {
+                const el = document.getElementById(`${model.model_id}-checkpoint`);
+                if (el) {
+                    if (model.loaded) {
+                        el.textContent = `Loaded (${model.device})`;
+                        el.className = 'status-loaded';
+                    } else {
+                        el.textContent = `Not loaded${model.error ? ': ' + model.error : ''}`;
+                        el.className = 'status-error';
+                    }
+                }
+            });
+        } catch (e) {
+            console.error('Failed to load model info:', e);
+        }
+    }
+
+    loadModelInfo();
+</script>
+{% endblock %}

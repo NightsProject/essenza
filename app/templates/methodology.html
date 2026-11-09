@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-content">
+    <h1>Methodology</h1>
+
+    <section class="methodology-section">
+        <h2>Research Question</h2>
+        <p>Does additional fine-tuning improve a pretrained Transformer's ability to preserve important facts when summarizing text under maximum length limits of 10%, 20%, and 30% of the source?</p>
+    </section>
+
+    <section class="methodology-section">
+        <h2>Models</h2>
+        <dl>
+            <dt>Baseline</dt>
+            <dd>Original <code>google/flan-t5-small</code> checkpoint without additional project-specific fine-tuning.</dd>
+            <dt>Fine-tuned</dt>
+            <dd>The same base checkpoint after additional fine-tuning on the project's compression-constrained examples.</dd>
+        </dl>
+    </section>
+
+    <section class="methodology-section">
+        <h2>Compression Limits</h2>
+        <p>Maximum summary length as a percentage of source word count:</p>
+        <ul>
+            <li><strong>10%</strong> — Extreme compression</li>
+            <li><strong>20%</strong> — High compression (default)</li>
+            <li><strong>30%</strong> — Moderate compression</li>
+        </ul>
+        <p class="note">These are <strong>ceilings</strong>, not exact targets. A summary may be shorter than the selected limit.</p>
+    </section>
+
+    <section class="methodology-section">
+        <h2>Prompt Format</h2>
+        <p>Both models receive the same prompt template:</p>
+        <pre><code>summarize to at most {{ max_compression_percent }}%: {{ source_text }}</code></pre>
+        <p>Allowed <code>max_compression_percent</code> values: 10, 20, 30.</p>
+    </section>
+
+    <section class="methodology-section">
+        <h2>Generation Configuration</h2>
+        <dl>
+            <dt>Input limit</dt>
+            <dd>512 tokens (matching notebook configuration). Inputs exceeding this are rejected with a clear error.</dd>
+            <dt>Output limit</dt>
+            <dd>128 generated tokens (notebook default).</dd>
+            <dt>Decoding</dt>
+            <dd>Deterministic: <code>num_beams=4</code>, <code>do_sample=False</code> for reproducible demonstrations.</dd>
+            <dt>Device</dt>
+            <dd>CUDA when available; otherwise CPU.</dd>
+        </dl>
+    </section>
+
+    <section class="methodology-section">
+        <h2>Metrics Reported</h2>
+        <table class="metrics-table">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Source word count</td>
+                    <td>Words in the input text (whitespace-delimited)</td>
+                </tr>
+                <tr>
+                    <td>Summary word count</td>
+                    <td>Words in the generated summary</td>
+                </tr>
+                <tr>
+                    <td>Actual compression ratio</td>
+                    <td>Summary words ÷ Source words × 100</td>
+                </tr>
+                <tr>
+                    <td>Cap compliance</td>
+                    <td>Whether actual ratio ≤ selected maximum threshold</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="methodology-section">
+        <h2>Limitations</h2>
+        <ul>
+            <li>Outputs can exceed the requested word cap; the model is not constrained to obey it.</li>
+            <li>Automatic generation alone does not establish factual correctness.</li>
+            <li>Fact coverage and factual consistency require human annotation (performed in the research workflow, not this demo).</li>
+            <li>Very short source texts make extreme compression impractical; word-ratio measurements are sensitive to small word-count changes.</li>
+        </ul>
+    </section>
+
+    <section class="methodology-section">
+        <h2>Evaluation (Research Workflow)</h2>
+        <p>The formal evaluation pipeline remains in the Colab notebook:</p>
+        <ul>
+            <li>Blind annotation of fact coverage and factual consistency</li>
+            <li>Bootstrap confidence intervals</li>
+            <li>ROUGE-L and other automated metrics</li>
+            <li>Statistical significance testing</li>
+        </ul>
+        <p>This web application is for interactive demonstration and qualitative comparison only.</p>
+    </section>
+</section>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+    <h1>Information-Preserving Extreme Text Summarization</h1>
+    <p class="hero-subtitle">Condense text under a maximum word-count budget.</p>
+    <p class="hero-note">The percentage is a <strong>maximum ceiling</strong>, not an exact target. Summaries may be shorter.</p>
+</section>
+
+<form id="summarize-form" class="summarize-form" novalidate>
+    <section class="form-section">
+        <label for="source-text" class="section-label">SOURCE TEXT</label>
+        <div class="editor-wrapper">
+            <textarea
+                id="source-text"
+                name="source_text"
+                placeholder="Paste or type the text to summarize..."
+                rows="12"
+                required
+                aria-describedby="source-word-count source-hint"
+            ></textarea>
+        </div>
+        <div class="editor-footer">
+            <span id="source-word-count" class="word-count">Source words: 0</span>
+            <button type="button" id="clear-btn" class="btn btn-secondary">Clear</button>
+        </div>
+        <p id="source-hint" class="form-hidden" aria-live="polite"></p>
+    </section>
+
+    <section class="form-section">
+        <label class="section-label">MAXIMUM SUMMARY LENGTH</label>
+        <div class="threshold-selector" role="radiogroup" aria-label="Maximum compression threshold">
+            <label class="threshold-btn">
+                <input type="radio" name="max_compression_percent" value="10" required>
+                <span>10%</span>
+            </label>
+            <label class="threshold-btn">
+                <input type="radio" name="max_compression_percent" value="20" checked>
+                <span>20%</span>
+            </label>
+            <label class="threshold-btn">
+                <input type="radio" name="max_compression_percent" value="30">
+                <span>30%</span>
+            </label>
+        </div>
+        <p class="form-hint">A ceiling, not an exact target.</p>
+    </section>
+
+    <section class="form-section">
+        <label class="section-label">MODEL MODE</label>
+        <div class="model-mode-selector" role="radiogroup" aria-label="Model inference mode">
+            <label class="mode-btn">
+                <input type="radio" name="model_mode" value="finetuned" checked>
+                <span>Fine-tuned model</span>
+            </label>
+            <label class="mode-btn">
+                <input type="radio" name="model_mode" value="compare">
+                <span>Compare baseline and fine-tuned</span>
+            </label>
+        </div>
+    </section>
+
+    <button type="submit" id="generate-btn" class="btn btn-primary btn-full">
+        <span class="btn-text">Generate summary</span>
+        <span class="btn-loading" hidden>
+            <span class="spinner" aria-hidden="true"></span>
+            Generating…
+        </span>
+    </button>
+</form>
+
+<section id="results" class="results-section" hidden>
+    <h2>RESULTS</h2>
+    <div id="results-grid" class="results-grid"></div>
+    <p class="methodology-note" id="methodology-note">
+        The selected percentage is a <strong>maximum</strong>. Actual compression ratio is shown per result.
+        Outputs exceeding the cap are flagged. This demo does not guarantee factual correctness.
+    </p>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Inline config for JS
+    window.ESS_ENZA_CONFIG = {
+        apiSummarize: '{{ url_for("summarize") }}',
+        apiCompare: '{{ url_for("compare") }}',
+    };
+</script>
+{% endblock %}

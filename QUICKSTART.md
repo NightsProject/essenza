@@ -3,50 +3,55 @@
 ## 🎯 First 5 Minutes
 ```bash
 cd ~/Vault/Projects/essenza
-cat AGENTS.md                    # Project conventions
-cat docs/design/README.md        # Decision map
-cat docs/design/decision-roadmap.md  # Current phase
+cat AGENTS.md                              # Project conventions
+cat docs/design/README.md                  # Decision map
+cat docs/design/Extreme_Text_Summarization_Web_Application_Design_Document.docx  # Full design
 ```
 
 ## 📍 Where Am I?
 - **Project**: `~/Vault/Projects/essenza/`
-- **Design**: `docs/design/decision-*.md`
-- **Plan**: `plans/phase-N-<name>.md`
-- **Source**: `src/` (to be created)
-- **Tests**: `tests/` (to be created)
+- **Design**: `docs/design/` (design doc + decision records)
+- **Plan**: `plans/phase-N-<name>.md` (6 phases from design doc)
+- **Source**: `app/` (FastAPI application)
+- **Tests**: `app/tests/`
 
-## 🔄 Current Phase Loop
-1. **Read** phase plan + relevant decisions
-2. **Confirm** with user: "Start implementing?"
-3. **Implement** one step → test → commit
-4. **Verify** exit criteria
-5. **Update** decision files with implementation notes
-6. **Repeat** or advance phase
+## 🔄 Current Phase Loop (6 phases from design doc)
+1. **Phase 1: Project setup** — FastAPI app, config, templates, static dirs, health route
+2. **Phase 2: Model integration** — Export artifacts, ModelRegistry, Summarizer, verify checkpoints
+3. **Phase 3: Core UI** — Source editor, threshold selector, model mode, result cards, loading/error
+4. **Phase 4: Comparison** — Compare endpoint + paired result display
+5. **Phase 5: Methodology & polish** — Methodology/about pages, responsive styles, accessibility, copy
+6. **Phase 6: Validation & deploy** — Tests, benchmark, production config, HTTPS
+
+**Per phase**: Read plan → Confirm "Start implementing?" → Implement → Test → Verify exit criteria → Update decisions
 
 ## ⛔ Guardrails
 | Never | Always |
 |-------|--------|
 | Code without decision | Trace implementation to decision file |
 | Skip phase exit criteria | Run all phase tests before advancing |
-| Hardcode secrets | Use Hermes secret mechanism |
-| Cross layer boundaries | `domain` imports nothing; `plugin` → `services` → `domain` |
+| Hardcode secrets | Use environment variables / Pydantic Settings |
+| Cross layer boundaries | Routes → Services → Model Runtime; no reverse imports |
 | Silent deviation | Update decision file if implementation differs |
+| Silent truncation | Validate 512-token limit explicitly; reject or confirm |
+| Claim factual correctness | Report compression + cap compliance only |
 
 ## 📋 Key Decisions by Topic (create as needed)
 | Topic | File |
 |-------|------|
-| Product scope | `decision-product-boundary.md` |
-| Hermes integration | `decision-agent-integration.md` |
-| Database | `decision-persistence.md` + `decision-data-design.md` |
-| Background work | `decision-scheduler.md` + `decision-notification-fallback.md` |
-| Tools/API | `decision-plugin-tools.md` |
-| Testing | `decision-testing.md` |
+| Model registry & loading | `decision-model-registry.md` |
+| Prompt & generation config | `decision-generation-config.md` |
+| Word count convention | `decision-word-count.md` |
+| API contracts | `decision-api-contracts.md` |
+| UI/design system | `decision-ui-design.md` |
+| Deployment & device | `decision-deployment.md` |
+| Testing strategy | `decision-testing.md` |
 | Risks | `decision-risks.md` |
 | Open questions | `decision-open-questions.md` |
 
 ## ✅ Before Committing
-- [ ] Tests pass (`pytest -x`)
-- [ ] Layer boundaries respected
+- [ ] Tests pass (`pytest app/tests -v`)
+- [ ] Layer boundaries respected (routes delegate to services)
 - [ ] Conventional commit: `feat(<area>): <desc> per decision-<x>.md`
 - [ ] Decision files updated if implementation diverged
 - [ ] Plan checkboxes updated
@@ -54,15 +59,15 @@ cat docs/design/decision-roadmap.md  # Current phase
 ## 🆘 Stuck?
 1. Check `decision-risks.md` — known issue?
 2. Check `decision-open-questions.md` — blocked on decision?
-3. Re-read relevant decision file
+3. Re-read relevant decision file + design doc section
 4. Ask user with specific question + decision reference
 
 ## 📁 File Creation Rules
 - New decision → `docs/design/decision-<kebab-case>.md`
 - New plan → `plans/phase-N-<name>.md`
-- Source code → `src/<layer>/` per architecture
-- Tests → `tests/<layer>/` mirroring source
+- Source code → `app/` (routers, schemas, services, templates, static)
+- Tests → `app/tests/` mirroring source structure
 
 ---
 
-**Remember**: The decisions ARE the spec. Code is just executable decisions.
+**Remember**: The design document + decisions ARE the spec. Code is just executable decisions.
