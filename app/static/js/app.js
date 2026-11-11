@@ -37,11 +37,11 @@
     const progressValue = document.getElementById('progress-value');
     const generationError = document.getElementById('generation-error');
 
+    const compressionLevels = [10, 20, 30];
     const singleModelSelector = document.getElementById('single-model-selector');
     const singleModelSelect = document.getElementById('single-model-select');
-    const modelModeRadios = document.querySelectorAll('input[name="model_mode"]');
-    const compressionLevels = [10, 20, 30];
-    const totalSteps = compressionLevels.length;
+    const generationModeRadios = document.querySelectorAll('input[name="generation_mode"]');
+    let availableModels = [];
 
     // ========================================================================
     // Utilities
@@ -75,14 +75,10 @@
         generateBtn.disabled = generating;
         sourceText.disabled = generating;
         clearBtn.disabled = generating;
-        modelModeRadios.forEach(radio => { radio.disabled = generating; });
+        generationModeRadios.forEach(radio => { radio.disabled = generating; });
         singleModelSelect.disabled = generating;
         progressSection.hidden = !generating;
-        if (!generating) {
-            progressBar.value = 100;
-            progressValue.textContent = '100%';
-            progressLabel.textContent = 'All compression levels complete';
-        } else {
+        if (generating) {
             updateProgress(0);
         }
 
@@ -104,13 +100,12 @@
     // ========================================================================
     // Progress
     // ========================================================================
-    function updateProgress(completedSteps, activeLevel = null) {
-        const percent = Math.round((completedSteps / totalSteps) * 100);
+    function updateProgress(percent, activeLabel = null) {
         progressBar.value = percent;
         progressValue.textContent = `${percent}%`;
-        progressLabel.textContent = activeLevel === null
-            ? 'Preparing summaries…'
-            : `Generating ${activeLevel}% compression summary…`;
+        progressLabel.textContent = activeLabel
+            ? `Generating ${activeLabel} summary…`
+            : percent === 100 ? 'All model summaries complete' : 'Preparing next summary…';
     }
 
     async function requestSummary(text, threshold, modelId) {
@@ -130,58 +125,146 @@
         return data;
     }
 
-    async function generateAllLevels(text, modelId) {
+    async function generateAllLevels(text, modelIds) {
+        const sourceWordCount = countWords(text);
         const results = [];
-        for (let index = 0; index < compressionLevels.length; index += 1) {
-            const level = compressionLevels[index];
-            updateProgress(index, level);
-            const result = await requestSummary(text, level, modelId);
-            results.push({ ...result, compression_level: level });
-            updateProgress(index + 1, index + 1 < totalSteps ? compressionLevels[index + 1] : null);
+        const totalWork = modelIds.length * compressionLevels.length;
+        let completedWork = 0;
+
+        for (const modelId of modelIds) {
+            for (const level of compressionLevels) {
+                const progress = Math.round((completedWork / totalWork) * 100);
+                updateProgress(progress, `${getModelLabel(modelId)} · ${level}%`);
+                try {
+                    const result = await requestSummary(text, level, modelId);
+                    results.push({ ...result, source_word_count: sourceWordCount, compression_level: level });
+                } catch (error) {
+                    results.push({
+                        model_id: modelId,
+                        model_label: getModelLabel(modelId),
+                        source_word_count: sourceWordCount,
+                        compression_level: level,
+                        summary: '',
+                        summary_word_count: 0,
+                        actual_compression_percent: 0,
+                        within_limit: false,
+                        generation_time_ms: 0,
+                        error: error.message || 'Generation failed',
+                    });
+                }
+                completedWork += 1;
+                updateProgress(Math.round((completedWork / totalWork) * 100), completedWork < totalWork ? 'Preparing next summary…' : null);
+            }
         }
+
         renderAllLevelResults(results);
         resultsSection.hidden = false;
+        updateProgress(100);
         scrollToResults();
+    }
+
+    function getModelLabel(modelId) {
+        return availableModels.find(model => model.model_id === modelId)?.model_label || modelId;
     }
 
     function renderAllLevelResults(results) {
         resultsGrid.innerHTML = '';
+        const groups = new Map();
         results.forEach(result => {
-            const card = createResultCard({
-                modelLabel: `${result.model_label} — ${result.compression_level}% maximum`,
-                summary: result.summary,
-                summaryWordCount: result.summary_word_count,
-                actualCompressionPercent: result.actual_compression_percent,
-                withinLimit: result.within_limit,
-                generationTimeMs: result.generation_time_ms,
-                requestId: result.request_id,
-            });
-            resultsGrid.appendChild(card);
+            if (!groups.has(result.model_id)) groups.set(result.model_id, []);
+            groups.get(result.model_id).push(result);
         });
+
+        groups.forEach((modelResults, modelId) => {
+            const divider = document.createElement('h3');
+            divider.className = 'model-results-divider';
+            divider.textContent = getModelLabel(modelId);
+            resultsGrid.appendChild(divider);
+            modelResults.forEach(result => {
+                const card = createResultCard({
+                    modelLabel: `${result.compression_level}% maximum`,
+                    summary: result.summary || '(summary unavailable)',
+                    summaryWordCount: result.summary_word_count,
+                    actualCompressionPercent: result.actual_compression_percent,
+                    withinLimit: result.within_limit,
+                    generationTimeMs: result.generation_time_ms,
+                    error: result.error,
+                    requestId: result.request_id,
+                });
+                resultsGrid.appendChild(card);
+            });
+        });
+
+        renderCompressionSummaryTable(results);
         methodologyNote.hidden = false;
+    }
+
+    function renderCompressionSummaryTable(results) {
+        const tableBody = document.getElementById('compression-summary-body');
+        tableBody.replaceChildren();
+        results.forEach(result => {
+            const row = document.createElement('tr');
+            const values = [
+                result.model_label,
+                String(result.source_word_count),
+                `${result.compression_level}%`,
+                String(Math.floor(result.source_word_count * result.compression_level / 100)),
+                result.error ? '—' : String(result.summary_word_count),
+                result.error ? '—' : formatRatio(result.actual_compression_percent),
+                result.error ? 'Error' : result.within_limit ? 'Yes' : 'No',
+                result.error ? '—' : `${result.generation_time_ms}ms`,
+            ];
+            values.forEach(value => {
+                const cell = document.createElement('td');
+                cell.textContent = value;
+                row.appendChild(cell);
+            });
+            tableBody.appendChild(row);
+        });
     }
 
     async function loadAvailableModels() {
         try {
             const response = await fetch(CONFIG.apiHealth);
             const data = await response.json();
-            const models = data.models.filter(model => model.loaded);
+            if (!response.ok) throw new Error(`Model list request failed: ${response.status}`);
+            availableModels = data.models.filter(model => model.loaded);
             singleModelSelect.replaceChildren();
-            models.forEach(model => {
+            availableModels.forEach(model => {
                 const option = document.createElement('option');
                 option.value = model.model_id;
                 option.textContent = `${model.model_label} (${model.model_type})`;
                 singleModelSelect.appendChild(option);
             });
-            const preferred = models.find(model => model.model_type === 'finetuned') || models[0];
-            if (preferred) singleModelSelect.value = preferred.model_id;
+            if (!availableModels.length) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No loaded models available';
+                option.disabled = true;
+                option.selected = true;
+                singleModelSelect.appendChild(option);
+            } else {
+                const preferred = availableModels.find(model => model.model_type === 'finetuned') || availableModels[0];
+                singleModelSelect.value = preferred.model_id;
+            }
         } catch (error) {
             console.error('Failed to load models:', error);
+            availableModels = [];
+            singleModelSelect.replaceChildren();
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Failed to load models';
+            option.disabled = true;
+            option.selected = true;
+            singleModelSelect.appendChild(option);
         }
+        toggleModelSelector();
     }
 
     function toggleModelSelector() {
-        singleModelSelector.hidden = document.querySelector('input[name="model_mode"]:checked').value !== 'single';
+        const singleMode = document.querySelector('input[name="generation_mode"]:checked').value === 'single';
+        singleModelSelector.hidden = !singleMode;
+        btnText.textContent = singleMode ? 'Generate summaries for selected model' : 'Generate all summaries';
     }
 
     // ========================================================================
@@ -216,15 +299,21 @@
 
         clearError();
         generationError.hidden = true;
+        const selectedMode = document.querySelector('input[name="generation_mode"]:checked').value;
+        const modelIds = selectedMode === 'all'
+            ? availableModels.map(model => model.model_id)
+            : [singleModelSelect.value];
+        if (!modelIds.length || modelIds.some(modelId => !modelId)) {
+            showError('No loaded models are available. Check model status and try again.');
+            return;
+        }
         setGenerating(true);
         resultsSection.hidden = true;
         resultsGrid.innerHTML = '';
         currentRequestId = crypto.randomUUID().slice(0, 8);
 
         try {
-            const selectedMode = document.querySelector('input[name="model_mode"]:checked').value;
-            const selectedModelId = selectedMode === 'compare' ? 'baseline' : singleModelSelect.value;
-            await generateAllLevels(text, selectedModelId);
+            await generateAllLevels(text, modelIds);
         } catch (error) {
             console.error('Generation error:', error);
             generationError.textContent = error.message || 'An unexpected error occurred. Please try again.';
@@ -315,7 +404,7 @@
     form.addEventListener('submit', handleSubmit);
     clearBtn.addEventListener('click', handleClear);
     sourceText.addEventListener('input', updateWordCount);
-    modelModeRadios.forEach(radio => radio.addEventListener('change', toggleModelSelector));
+    generationModeRadios.forEach(radio => radio.addEventListener('change', toggleModelSelector));
 
     // Initialize
     updateWordCount();

@@ -28,28 +28,29 @@
     </section>
 
     <section class="form-section">
-        <label class="section-label">COMPRESSION LEVELS</label>
+        <label class="section-label">GENERATION MODE</label>
         <p class="form-hint">Generate results for all three maximum summary lengths: 10%, 20%, and 30%.</p>
     </section>
 
     <section class="form-section">
-        <label class="section-label">MODEL MODE</label>
-        <div class="model-mode-selector" role="radiogroup" aria-label="Model inference mode">
+        <label class="section-label">GENERATION MODE</label>
+        <div class="model-mode-selector" role="radiogroup" aria-label="Generation mode">
             <label class="mode-btn">
-                <input type="radio" name="model_mode" value="single" checked>
+                <input type="radio" name="generation_mode" value="single" checked>
                 <span>Single model</span>
             </label>
             <label class="mode-btn">
-                <input type="radio" name="model_mode" value="compare">
-                <span>Compare all models</span>
+                <input type="radio" name="generation_mode" value="all">
+                <span>Generate all models</span>
             </label>
         </div>
         <div id="single-model-selector" class="model-selector">
             <label class="section-label" for="single-model-select">Select model</label>
             <select id="single-model-select" name="model_id" aria-label="Select model for single-model mode">
-                <option value="finetuned">Fine-tuned model</option>
+                <option value="" disabled selected>Loading models…</option>
             </select>
         </div>
+        <p class="form-hint">Each mode generates summaries at 10%, 20%, and 30% maximum compression.</p>
     </section>
 
     <section id="generation-progress" class="generation-progress" aria-live="polite" hidden>
@@ -71,14 +72,35 @@
         </span>
     </button>
 </form>
-    <section id="results" class="results-section" hidden>
-        <h2>RESULTS</h2>
-        <div id="results-grid" class="results-grid"></div>
-        <p class="methodology-note" id="methodology-note">
-            Each percentage is a <strong>maximum</strong>. Actual compression ratio is shown per result.
-            Outputs exceeding the cap are flagged. This demo does not guarantee factual correctness.
-        </p>
+
+<section id="results" class="results-section" hidden>
+    <h2>RESULTS</h2>
+    <div id="results-grid" class="results-grid"></div>
+    <section class="compression-table-section" aria-labelledby="compression-table-heading">
+        <h3 id="compression-table-heading">Compression summary</h3>
+        <div class="table-scroll">
+            <table id="compression-summary-table" class="metrics-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Model</th>
+                        <th scope="col">Source length</th>
+                        <th scope="col">Maximum</th>
+                        <th scope="col">Target words</th>
+                        <th scope="col">Summary words</th>
+                        <th scope="col">Actual compression</th>
+                        <th scope="col">Within cap</th>
+                        <th scope="col">Time</th>
+                    </tr>
+                </thead>
+                <tbody id="compression-summary-body"></tbody>
+            </table>
+        </div>
     </section>
+    <p class="methodology-note" id="methodology-note">
+        Each percentage is a <strong>maximum</strong>. Actual compression ratio is shown per result.
+        Outputs exceeding the cap are flagged. This demo does not guarantee factual correctness.
+    </p>
+</section>
 
 {% endblock %}
 

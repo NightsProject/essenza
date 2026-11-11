@@ -364,6 +364,18 @@ main { padding: var(--space-6) 0; }
    Results
    ============================================================================ */
 .results-section { margin-top: var(--space-8); }
+.compression-table-section { margin-top: var(--space-6); }
+.compression-table-section h3 { margin: 0 0 var(--space-3); }
+.table-scroll { overflow-x: auto; }
+.compression-table-section .metrics-table { min-width: 620px; }
+.model-results-divider {
+    grid-column: 1 / -1;
+    margin: var(--space-5) 0 0;
+    padding-bottom: var(--space-2);
+    border-bottom: 2px solid var(--color-primary);
+    color: var(--color-primary);
+}
+.model-results-divider:first-child { margin-top: 0; }
 .results-section h2 {
     font-size: var(--text-xl);
     margin: 0 0 var(--space-4);

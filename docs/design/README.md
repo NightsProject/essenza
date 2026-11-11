@@ -15,6 +15,7 @@ This directory contains **one file per design decision** for essenza (Extreme Te
 | `decision-word-count.md` | Word-count convention matching notebook; token validation | ⬜ Not created — implemented inline in code |
 | `decision-ui-design.md` | Design system, layout, responsive behavior, accessibility | ⬜ Not created — implemented inline in CSS/JS |
 | `decision-comparison-mode.md` | Side-by-side endpoint, partial failure handling | ⬜ Not created — implemented inline in code |
+| `decision-all-model-compression-results.md` | Single-model or all-loaded-model mode across 10%, 20%, and 30%; grouped summaries and compression table | ✅ Created |
 | `decision-open-questions.md` | Deferred decisions | 🟡 Create as needed |
 | `decision-risks.md` | Identified risks & mitigations | 🟡 Create as needed |
 | `decision-<topic>.md` | Additional domain-specific decisions | 🟢 Add during implementation |
