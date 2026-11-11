@@ -1,0 +1,10 @@
+target_length,metric,difference_exp8_minus_exp7,ci95_low,ci95_high,ci_excludes_zero,bootstrap_iterations,bootstrap_unit
+10,rougeL_f1,-0.009655787199999932,-0.03252502739999996,0.013909112399999979,False,10000,source_id (paired cluster bootstrap)
+10,actual_compression_percent,0.6540281600000002,0.2590020000000006,1.0842326800000004,True,10000,source_id (paired cluster bootstrap)
+10,within_target_percent,-6.0,-14.0,0.0,False,10000,source_id (paired cluster bootstrap)
+20,rougeL_f1,0.013260932999999975,-0.011474947400000046,0.03728263260000003,False,10000,source_id (paired cluster bootstrap)
+20,actual_compression_percent,1.0524350600000005,-0.2489247399999961,2.359794019999999,False,10000,source_id (paired cluster bootstrap)
+20,within_target_percent,-8.0,-22.0,6.0,False,10000,source_id (paired cluster bootstrap)
+30,rougeL_f1,-0.015502093400000028,-0.03450913240000003,0.0033559637999999725,False,10000,source_id (paired cluster bootstrap)
+30,actual_compression_percent,-2.280214439999998,-4.382112020000001,-0.09894080000000116,True,10000,source_id (paired cluster bootstrap)
+30,within_target_percent,14.0,0.0,28.0,False,10000,source_id (paired cluster bootstrap)
