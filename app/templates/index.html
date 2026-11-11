@@ -28,22 +28,8 @@
     </section>
 
     <section class="form-section">
-        <label class="section-label">MAXIMUM SUMMARY LENGTH</label>
-        <div class="threshold-selector" role="radiogroup" aria-label="Maximum compression threshold">
-            <label class="threshold-btn">
-                <input type="radio" name="max_compression_percent" value="10" required>
-                <span>10%</span>
-            </label>
-            <label class="threshold-btn">
-                <input type="radio" name="max_compression_percent" value="20" checked>
-                <span>20%</span>
-            </label>
-            <label class="threshold-btn">
-                <input type="radio" name="max_compression_percent" value="30">
-                <span>30%</span>
-            </label>
-        </div>
-        <p class="form-hint">A ceiling, not an exact target.</p>
+        <label class="section-label">COMPRESSION LEVELS</label>
+        <p class="form-hint">Generate results for all three maximum summary lengths: 10%, 20%, and 30%.</p>
     </section>
 
     <section class="form-section">
@@ -58,32 +44,41 @@
                 <span>Compare all models</span>
             </label>
         </div>
-        <!-- Single model selection (shown when mode=single) -->
-        <div id="single-model-selector" class="model-selector" hidden>
+        <div id="single-model-selector" class="model-selector">
             <label class="section-label" for="single-model-select">Select model</label>
             <select id="single-model-select" name="model_id" aria-label="Select model for single-model mode">
-                <option value="finetuned" disabled>Loading models…</option>
+                <option value="finetuned">Fine-tuned model</option>
             </select>
         </div>
     </section>
 
+    <section id="generation-progress" class="generation-progress" aria-live="polite" hidden>
+        <div class="progress-label-row">
+            <span id="progress-label">Preparing summaries…</span>
+            <span id="progress-value">0%</span>
+        </div>
+        <progress id="progress-bar" max="100" value="0" aria-label="Summary generation progress">0%</progress>
+    </section>
+
+    <p id="generation-error" class="generation-error" role="alert" hidden></p>
+
+
     <button type="submit" id="generate-btn" class="btn btn-primary btn-full">
-        <span class="btn-text">Generate summary</span>
+        <span class="btn-text">Generate all summaries</span>
         <span class="btn-loading" hidden>
             <span class="spinner" aria-hidden="true"></span>
             Generating…
         </span>
     </button>
 </form>
-
-<section id="results" class="results-section" hidden>
-    <h2>RESULTS</h2>
-    <div id="results-grid" class="results-grid"></div>
-    <p class="methodology-note" id="methodology-note">
-        The selected percentage is a <strong>maximum</strong>. Actual compression ratio is shown per result.
-        Outputs exceeding the cap are flagged. This demo does not guarantee factual correctness.
-    </p>
-</section>
+    <section id="results" class="results-section" hidden>
+        <h2>RESULTS</h2>
+        <div id="results-grid" class="results-grid"></div>
+        <p class="methodology-note" id="methodology-note">
+            Each percentage is a <strong>maximum</strong>. Actual compression ratio is shown per result.
+            Outputs exceeding the cap are flagged. This demo does not guarantee factual correctness.
+        </p>
+    </section>
 
 {% endblock %}
 

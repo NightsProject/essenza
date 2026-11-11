@@ -344,6 +344,22 @@ main { padding: var(--space-6) 0; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Generation progress */
+.generation-progress {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+.progress-label-row { display: flex; justify-content: space-between; gap: var(--space-3); font-size: var(--text-sm); }
+#progress-label { color: var(--color-text); font-weight: 600; }
+#progress-value { color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+#progress-bar { width: 100%; height: 12px; accent-color: var(--color-primary); }
+.generation-error { color: var(--color-error); background: var(--color-error-bg); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); }
+
 /* ============================================================================
    Results
    ============================================================================ */
