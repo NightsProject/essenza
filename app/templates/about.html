@@ -20,7 +20,9 @@
                 </tr>
                 <tr>
                     <th>Baseline Checkpoint</th>
-                    <td id="baseline-checkpoint">Not loaded</td>
+                    <td>
+                        <div id="baseline-checkpoint">Loading…</div>
+                    </td>
                 </tr>
                 <tr>
                     <th>Fine-tuned Checkpoints</th>
@@ -100,13 +102,12 @@
             const baselineModel = data.models.find(m => m.model_id === 'baseline');
             const baselineEl = document.getElementById('baseline-checkpoint');
             if (baselineEl && baselineModel) {
-                if (baselineModel.loaded) {
-                    baselineEl.textContent = `Loaded (${baselineModel.device})`;
-                    baselineEl.className = 'status-loaded';
-                } else {
-                    baselineEl.textContent = `Not loaded${baselineModel.error ? ': ' + baselineModel.error : ''}`;
-                    baselineEl.className = 'status-error';
-                }
+                const statusHtml = baselineModel.loaded
+                    ? `<span class="status-loaded">Loaded (${baselineModel.device})</span>`
+                    : `<span class="status-error">Not loaded${baselineModel.error ? ': ' + baselineModel.error : ''}</span>`;
+                baselineEl.innerHTML = `<div class="model-status-row">
+                    <strong>${baselineModel.model_label}</strong> ${statusHtml}
+                </div>`;
             }
 
             // Handle fine-tuned models (could be multiple)
