@@ -23,8 +23,10 @@
                     <td id="baseline-checkpoint">Not loaded</td>
                 </tr>
                 <tr>
-                    <th>Fine-tuned Checkpoint</th>
-                    <td id="finetuned-checkpoint">Not loaded</td>
+                    <th>Fine-tuned Checkpoints</th>
+                    <td>
+                        <div id="finetuned-checkpoints">Loading…</div>
+                    </td>
                 </tr>
                 <tr>
                     <th>Tokenizer</th>
@@ -81,7 +83,6 @@
         </ul>
     </section>
 </section>
-
 {% endblock %}
 
 {% block scripts %}
@@ -95,18 +96,37 @@
             document.getElementById('app-version').textContent = data.version;
             document.getElementById('device-info').textContent = data.device;
 
-            data.models.forEach(model => {
-                const el = document.getElementById(`${model.model_id}-checkpoint`);
-                if (el) {
-                    if (model.loaded) {
-                        el.textContent = `Loaded (${model.device})`;
-                        el.className = 'status-loaded';
-                    } else {
-                        el.textContent = `Not loaded${model.error ? ': ' + model.error : ''}`;
-                        el.className = 'status-error';
-                    }
+            // Handle baseline
+            const baselineModel = data.models.find(m => m.model_id === 'baseline');
+            const baselineEl = document.getElementById('baseline-checkpoint');
+            if (baselineEl && baselineModel) {
+                if (baselineModel.loaded) {
+                    baselineEl.textContent = `Loaded (${baselineModel.device})`;
+                    baselineEl.className = 'status-loaded';
+                } else {
+                    baselineEl.textContent = `Not loaded${baselineModel.error ? ': ' + baselineModel.error : ''}`;
+                    baselineEl.className = 'status-error';
                 }
-            });
+            }
+
+            // Handle fine-tuned models (could be multiple)
+            const finetunedModels = data.models.filter(m => m.model_type === 'finetuned');
+            const container = document.getElementById('finetuned-checkpoints');
+            if (container) {
+                if (finetunedModels.length === 0) {
+                    container.innerHTML = '<span class="status-error">No fine-tuned models discovered</span>';
+                } else {
+                    container.innerHTML = finetunedModels.map(model => {
+                        const statusHtml = model.loaded
+                            ? `<span class="status-loaded">Loaded (${model.device})</span>`
+                            : `<span class="status-error">Not loaded${model.error ? ': ' + model.error : ''}</span>`;
+                        return `<div class="model-status-row">
+                            <strong>${model.label}</strong> ${statusHtml}
+                        </div>`;
+                    }).join('');
+                }
+            }
+
         } catch (e) {
             console.error('Failed to load model info:', e);
         }

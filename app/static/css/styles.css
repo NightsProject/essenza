@@ -531,6 +531,20 @@ main { padding: var(--space-6) 0; }
 .info-table .status-loaded { color: var(--color-success); font-weight: 600; }
 .info-table .status-error { color: var(--color-error); }
 
+.model-status-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+}
+.model-status-row:last-child {
+    border-bottom: none;
+}
+.model-status-row strong {
+    min-width: 140px;
+}
+
 /* ============================================================================
    Mobile Support (additive, not mobile-first)
    ============================================================================ */
