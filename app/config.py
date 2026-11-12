@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     # Application
     app_name: str = "essenza"
     version: str = "0.1.0"
-    debug: bool = False
+    debug: bool = True
     host: str = "0.0.0.0"
     port: int = 8000
     log_level: str = "INFO"
