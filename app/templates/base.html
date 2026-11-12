@@ -4,13 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Essenza — Extreme Text Summarization{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=20261113-3">
 </head>
 <body>
     <header class="site-header">
         <div class="container">
             <a href="{{ url_for('index') }}" class="site-title">Essenza</a>
-            <nav class="site-nav">
+            <button class="nav-toggle" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle navigation">
+                <svg class="nav-toggle-open" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+                <svg class="nav-toggle-close" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <nav class="site-nav" id="site-nav" role="navigation" aria-label="Main navigation">
                 <a href="{{ url_for('index') }}">Summarizer</a>
                 <a href="{{ url_for('methodology') }}">Methodology</a>
                 <a href="{{ url_for('about') }}">About</a>
@@ -29,7 +33,7 @@
         </div>
     </footer>
 
-    <script src="{{ url_for('static', path='js/app.js') }}"></script>
+    <script src="{{ url_for('static', path='js/app.js') }}?v=20261113-2"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

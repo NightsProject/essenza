@@ -36,12 +36,17 @@
     const progressLabel = document.getElementById('progress-label');
     const progressValue = document.getElementById('progress-value');
     const generationError = document.getElementById('generation-error');
+    const mobileCompressionCards = document.getElementById('mobile-compression-cards');
 
     const compressionLevels = [10, 20, 30];
     const singleModelSelector = document.getElementById('single-model-selector');
     const singleModelSelect = document.getElementById('single-model-select');
     const generationModeRadios = document.querySelectorAll('input[name="generation_mode"]');
     let availableModels = [];
+
+    // Mobile nav
+    const navToggle = document.querySelector('.nav-toggle');
+    const siteNav = document.getElementById('site-nav');
 
     // ========================================================================
     // Utilities
@@ -196,6 +201,7 @@
         });
 
         renderCompressionSummaryTable(results);
+        renderMobileCompressionCards(results);
         methodologyNote.hidden = false;
     }
 
@@ -220,6 +226,36 @@
                 row.appendChild(cell);
             });
             tableBody.appendChild(row);
+        });
+    }
+
+    function renderMobileCompressionCards(results) {
+        if (!mobileCompressionCards) return;
+        mobileCompressionCards.innerHTML = '';
+        results.forEach(result => {
+            const card = document.createElement('article');
+            card.className = `mobile-card ${result.within_limit ? 'within' : 'exceeds'}`;
+            if (result.error) card.classList.add('error');
+            
+            const capBadgeClass = result.within_limit ? 'within' : 'exceeds';
+            const capBadgeText = result.within_limit ? 'Within cap' : 'Exceeds cap';
+            
+            card.innerHTML = `
+                <div class="mobile-header">
+                    <span class="mobile-model">${escapeHtml(`${result.compression_level}% maximum`)}</span>
+                    <span class="mobile-cap-badge ${capBadgeClass}">${escapeHtml(capBadgeText)}</span>
+                </div>
+                ${result.error ? `
+                    <div class="mobile-error">Error: ${escapeHtml(result.error)}</div>
+                ` : `
+                    <div class="mobile-row"><span>Source words</span><strong>${result.source_word_count}</strong></div>
+                    <div class="mobile-row"><span>Target words</span><strong>${Math.floor(result.source_word_count * result.compression_level / 100)}</strong></div>
+                    <div class="mobile-row"><span>Summary words</span><strong>${result.summary_word_count}</strong></div>
+                    <div class="mobile-row"><span>Actual compression</span><strong>${formatRatio(result.actual_compression_percent)}</strong></div>
+                    <div class="mobile-row"><span>Generation time</span><strong>${result.generation_time_ms}ms</strong></div>
+                `}
+            `;
+            mobileCompressionCards.appendChild(card);
         });
     }
 
@@ -401,16 +437,43 @@
     // ========================================================================
     // Event Listeners
     // ========================================================================
-    form.addEventListener('submit', handleSubmit);
-    clearBtn.addEventListener('click', handleClear);
-    sourceText.addEventListener('input', updateWordCount);
-    generationModeRadios.forEach(radio => radio.addEventListener('change', toggleModelSelector));
+    if (form) form.addEventListener('submit', handleSubmit);
+    if (clearBtn) clearBtn.addEventListener('click', handleClear);
+    if (sourceText) sourceText.addEventListener('input', updateWordCount);
+    if (generationModeRadios.length) {
+        generationModeRadios.forEach(radio => radio.addEventListener('change', toggleModelSelector));
+    }
+
+    // Mobile nav toggle
+    if (navToggle && siteNav) {
+        navToggle.addEventListener("click", () => {
+            const isOpen = siteNav.classList.toggle("open");
+            navToggle.setAttribute("aria-expanded", isOpen);
+        });
+        siteNav.querySelectorAll("a").forEach(link => {
+            link.addEventListener("click", () => {
+                siteNav.classList.remove("open");
+                navToggle.setAttribute("aria-expanded", "false");
+            });
+        });
+        document.addEventListener("keydown", (e) => {
+            if (e.code === "Escape" && siteNav.classList.contains("open")) {
+                siteNav.classList.remove("open");
+                navToggle.setAttribute("aria-expanded", "false");
+                navToggle.focus();
+            }
+        });
+    }
 
     // Initialize
-    updateWordCount();
+    if (sourceText) {
+        updateWordCount();
+        sourceText.focus();
+    }
     loadAvailableModels();
-    toggleModelSelector();
-    sourceText.focus();
+    if (generationModeRadios.length) {
+        toggleModelSelector();
+    }
 
     // Announce generation status for screen readers
     function announceStatus(message) {

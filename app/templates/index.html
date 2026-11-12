@@ -2,9 +2,8 @@
 
 {% block content %}
 <section class="hero">
-    <h1>Information-Preserving Extreme Text Summarization</h1>
+    <h1>Extreme Text Summarization</h1>
     <p class="hero-subtitle">Condense text under a maximum word-count budget.</p>
-    <p class="hero-note">The percentage is a <strong>maximum ceiling</strong>, not an exact target. Summaries may be shorter.</p>
 </section>
 
 <form id="summarize-form" class="summarize-form" novalidate>
@@ -95,6 +94,7 @@
                 <tbody id="compression-summary-body"></tbody>
             </table>
         </div>
+        <div class="mobile-compression-cards" id="mobile-compression-cards" aria-live="polite"></div>
     </section>
     <p class="methodology-note" id="methodology-note">
         Each percentage is a <strong>maximum</strong>. Actual compression ratio is shown per result.

@@ -5,102 +5,69 @@
     <h1>Methodology</h1>
 
     <section class="methodology-section">
-        <h2>Research Question</h2>
-        <p>Does additional fine-tuning improve a pretrained Transformer's ability to preserve important facts when summarizing text under maximum length limits of 10%, 20%, and 30% of the source?</p>
-    </section>
-
-    <section class="methodology-section">
-        <h2>Models</h2>
+        <h2>Study design</h2>
+        <p>This study asks whether fine-tuning improves a pretrained Transformer's ability to produce reference-like summaries while respecting maximum length limits of 10%, 20%, and 30% of the source.</p>
         <dl>
             <dt>Baseline</dt>
-            <dd>Original <code>google/flan-t5-small</code> checkpoint without additional project-specific fine-tuning.</dd>
-            <dt>Fine-tuned</dt>
-            <dd>The same base checkpoint after additional fine-tuning on the project's compression-constrained examples.</dd>
+            <dd>Original <code>google/flan-t5-small</code>, without project-specific fine-tuning.</dd>
+            <dt>Fine-tuned model</dt>
+            <dd>The same base checkpoint after fine-tuning on compression-conditioned examples.</dd>
+            <dt>Evaluation data</dt>
+            <dd>The later experiments use 540 training sources, 110 validation sources, and 50 held-out test sources. Each source has reference summaries for all three compression conditions.</dd>
         </dl>
+        <p>The primary comparison is pretrained baseline versus ordinary fine-tuned generation. Auxiliary-guided inference is excluded.</p>
     </section>
 
     <section class="methodology-section">
-        <h2>Compression Limits</h2>
-        <p>Maximum summary length as a percentage of source word count:</p>
+        <h2>Compression conditions</h2>
+        <p>The selected percentage is a maximum word-count cap relative to the source, not a target that summaries must fill:</p>
         <ul>
-            <li><strong>10%</strong> — Extreme compression</li>
-            <li><strong>20%</strong> — High compression (default)</li>
-            <li><strong>30%</strong> — Moderate compression</li>
+            <li><strong>10%</strong> — extreme compression</li>
+            <li><strong>20%</strong> — high compression (default)</li>
+            <li><strong>30%</strong> — moderate compression</li>
         </ul>
-        <p class="note">These are <strong>ceilings</strong>, not exact targets. A summary may be shorter than the selected limit.</p>
+        <p>Human reference summaries average approximately 7.86%, 16.86%, and 26.05% of source length for the corresponding 10%, 20%, and 30% conditions.</p>
     </section>
 
     <section class="methodology-section">
-        <h2>Prompt Format</h2>
-        <p>Both models receive the same prompt template:</p>
-        <pre><code>summarize to at most {{ max_compression_percent }}%: {{ source_text }}</code></pre>
-        <p>Allowed <code>max_compression_percent</code> values: 10, 20, 30.</p>
-    </section>
-
-    <section class="methodology-section">
-        <h2>Generation Configuration</h2>
+        <h2>Webapp generation setup</h2>
+        <p>These settings describe interactive webapp generation; they should not be confused with every training/evaluation notebook configuration.</p>
         <dl>
             <dt>Input limit</dt>
-            <dd>512 tokens (matching notebook configuration). Inputs exceeding this are rejected with a clear error.</dd>
+            <dd>512 tokens. Inputs exceeding this limit are rejected with a clear error.</dd>
             <dt>Output limit</dt>
-            <dd>128 generated tokens (notebook default).</dd>
+            <dd>128 generated tokens.</dd>
             <dt>Decoding</dt>
-            <dd>Deterministic: <code>num_beams=4</code>, <code>do_sample=False</code> for reproducible demonstrations.</dd>
+            <dd>Deterministic beam search: <code>num_beams=4</code>, <code>do_sample=False</code>.</dd>
             <dt>Device</dt>
             <dd>CUDA when available; otherwise CPU.</dd>
         </dl>
     </section>
 
     <section class="methodology-section">
-        <h2>Metrics Reported</h2>
-        <table class="metrics-table">
-            <thead>
-                <tr>
-                    <th>Metric</th>
-                    <th>Description</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Source word count</td>
-                    <td>Words in the input text (whitespace-delimited)</td>
-                </tr>
-                <tr>
-                    <td>Summary word count</td>
-                    <td>Words in the generated summary</td>
-                </tr>
-                <tr>
-                    <td>Actual compression ratio</td>
-                    <td>Summary words ÷ Source words × 100</td>
-                </tr>
-                <tr>
-                    <td>Cap compliance</td>
-                    <td>Whether actual ratio ≤ selected maximum threshold</td>
-                </tr>
-            </tbody>
-        </table>
-    </section>
-
-    <section class="methodology-section">
-        <h2>Limitations</h2>
+        <h2>Evaluation measures</h2>
         <ul>
-            <li>Outputs can exceed the requested word cap; the model is not constrained to obey it.</li>
-            <li>Automatic generation alone does not establish factual correctness.</li>
-            <li>Fact coverage and factual consistency require human annotation (performed in the research workflow, not this demo).</li>
-            <li>Very short source texts make extreme compression impractical; word-ratio measurements are sensitive to small word-count changes.</li>
+            <li><strong>Actual compression:</strong> generated summary word count divided by source word count, multiplied by 100. Word counts are whitespace-delimited.</li>
+            <li><strong>Strict cap compliance:</strong> percentage of outputs whose actual compression is at or below the selected maximum.</li>
+            <li><strong>ROUGE-L F1:</strong> overlap-based similarity between generated summaries and human references. This is an automatic similarity measure, not a direct factuality score.</li>
+            <li><strong>Paired bootstrap:</strong> confidence intervals for fine-tuned-minus-baseline ROUGE-L differences, paired by test source. The test source is the resampling unit, keeping its compression conditions together. An interval excluding zero supports a non-zero difference for that run; it does not establish which fine-tuned checkpoint is best.</li>
         </ul>
     </section>
 
     <section class="methodology-section">
-        <h2>Evaluation (Research Workflow)</h2>
-        <p>The formal evaluation pipeline remains in the Colab notebook:</p>
+        <h2>Latest documented comparison: Experiment 14</h2>
+        <p>On 50 held-out test sources, baseline versus fine-tuned ROUGE-L F1 was 0.208 versus 0.391 at 10%, 0.251 versus 0.358 at 20%, and 0.252 versus 0.390 at 30%. The paired fine-tuned-minus-baseline differences were +0.1826 (95% CI 0.1262–0.2371), +0.1064 (0.0739–0.1382), and +0.1383 (0.1041–0.1714); all three intervals exclude zero.</p>
+        <p>Strict cap compliance for the fine-tuned model was 94%, 78%, and 58% at 10%, 20%, and 30%, compared with 0%, 26%, and 54% for the baseline. The 30% compliance difference was not statistically significant in the reported paired bootstrap and remains a weakness.</p>
+    </section>
+
+    <section class="methodology-section">
+        <h2>Interpretation and limitations</h2>
         <ul>
-            <li>Blind annotation of fact coverage and factual consistency</li>
-            <li>Bootstrap confidence intervals</li>
-            <li>ROUGE-L and other automated metrics</li>
-            <li>Statistical significance testing</li>
+            <li>Experiments vary in dataset splits, prompts, training settings, and sometimes test-set size. Cross-experiment rankings are descriptive unless checkpoints are evaluated on identical sources using the same protocol and a direct paired test.</li>
+            <li>Compliance alone can reward summaries that are much shorter than the requested cap. Interpret compliance alongside actual compression and ROUGE-L.</li>
+            <li>ROUGE-L and length metrics do not prove factual consistency, complete fact coverage, or usefulness; these require separate human assessment.</li>
+            <li>The webapp supports interactive generation and side-by-side comparison. It does not reproduce the full held-out research evaluation or guarantee factual correctness.</li>
         </ul>
-        <p>This web application is for interactive demonstration and qualitative comparison only.</p>
     </section>
 </section>
 {% endblock %}
